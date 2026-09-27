@@ -20,6 +20,7 @@
  */
 
 #include "marker-sketcher-window.h"
+#include "marker-brush-scale.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -27,13 +28,8 @@
 
 #include <glib/gi18n.h>
 
-#define P_SIZE_S 3
-#define P_SIZE_M 6
-#define P_SIZE_L 12
-
-#define F_SIZE_S 12
-#define F_SIZE_M 14
-#define F_SIZE_L 18
+/* Text size grows with the brush size: 3 px brush -> 13 px text, 12 px -> 22 px */
+#define FONT_SIZE(brush) (10.0 + (brush))
 
 struct _MarkerSketcherWindow
 {
@@ -42,6 +38,7 @@ struct _MarkerSketcherWindow
   GtkPopover           *text_popover;
   GtkEntry             *text_entry;
   GtkColorDialogButton *color_button;
+  MarkerBrushScale     *brush_scale;
 
   GtkDrawingArea       *drawing_area;
   cairo_surface_t      *surface;
@@ -138,12 +135,7 @@ draw_text (MarkerSketcherWindow *w)
     return;
 
   cairo_t *cr = cairo_create (w->surface);
-  if (w->size == P_SIZE_S)
-    cairo_set_font_size (cr, F_SIZE_S);
-  else if (w->size == P_SIZE_M)
-    cairo_set_font_size (cr, F_SIZE_M);
-  else
-    cairo_set_font_size (cr, F_SIZE_L);
+  cairo_set_font_size (cr, FONT_SIZE (w->size));
   cairo_set_source_rgba (cr, w->color.red, w->color.green, w->color.blue, w->color.alpha);
   cairo_move_to (cr, w->pos_x, w->pos_y);
   cairo_show_text (cr, text);
@@ -292,24 +284,11 @@ text_toggled_cb (GtkToggleButton *button, gpointer data)
 }
 
 static void
-small_toggled_cb (GtkToggleButton *button, gpointer data)
+brush_size_changed_cb (MarkerBrushScale *scale,
+                       GParamSpec       *pspec,
+                       gpointer          data)
 {
-  if (gtk_toggle_button_get_active (button))
-    MARKER_SKETCHER_WINDOW (data)->size = P_SIZE_S;
-}
-
-static void
-medium_toggled_cb (GtkToggleButton *button, gpointer data)
-{
-  if (gtk_toggle_button_get_active (button))
-    MARKER_SKETCHER_WINDOW (data)->size = P_SIZE_M;
-}
-
-static void
-large_toggled_cb (GtkToggleButton *button, gpointer data)
-{
-  if (gtk_toggle_button_get_active (button))
-    MARKER_SKETCHER_WINDOW (data)->size = P_SIZE_L;
+  MARKER_SKETCHER_WINDOW (data)->size = marker_brush_scale_get_value (scale);
 }
 
 static void
@@ -319,6 +298,7 @@ color_changed_cb (GtkColorDialogButton *button,
 {
   MarkerSketcherWindow *w = MARKER_SKETCHER_WINDOW (data);
   w->color = *gtk_color_dialog_button_get_rgba (button);
+  marker_brush_scale_set_color (w->brush_scale, &w->color);
 }
 
 static gchar *
@@ -453,6 +433,8 @@ connect_clicked (GtkBuilder  *builder,
 static void
 init_ui (MarkerSketcherWindow *window)
 {
+  g_type_ensure (MARKER_TYPE_BRUSH_SCALE);
+
   GtkBuilder *builder =
     gtk_builder_new_from_resource ("/com/github/fabiocolacio/marker/ui/marker-sketcher-window.ui");
 
@@ -487,6 +469,12 @@ init_ui (MarkerSketcherWindow *window)
   gtk_color_dialog_button_set_rgba (window->color_button, &window->color);
   g_signal_connect (window->color_button, "notify::rgba", G_CALLBACK (color_changed_cb), window);
 
+  /* Brush size */
+  window->brush_scale = MARKER_BRUSH_SCALE (gtk_builder_get_object (builder, "brush_scale"));
+  marker_brush_scale_set_value (window->brush_scale, window->size);
+  marker_brush_scale_set_color (window->brush_scale, &window->color);
+  g_signal_connect (window->brush_scale, "notify::value", G_CALLBACK (brush_size_changed_cb), window);
+
   /* Input */
   GtkGesture *drag = gtk_gesture_drag_new ();
   gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (drag), GDK_BUTTON_PRIMARY);
@@ -503,9 +491,6 @@ init_ui (MarkerSketcherWindow *window)
   connect_toggle (builder, "pen_radio_button", G_CALLBACK (pen_toggled_cb), window);
   connect_toggle (builder, "eraser_radio_button", G_CALLBACK (eraser_toggled_cb), window);
   connect_toggle (builder, "text_radio_button", G_CALLBACK (text_toggled_cb), window);
-  connect_toggle (builder, "small_radio_button", G_CALLBACK (small_toggled_cb), window);
-  connect_toggle (builder, "medium_radio_button", G_CALLBACK (medium_toggled_cb), window);
-  connect_toggle (builder, "large_radio_button", G_CALLBACK (large_toggled_cb), window);
   connect_clicked (builder, "insert_button", G_CALLBACK (insert_sketch_cb), window);
   connect_clicked (builder, "close_button", G_CALLBACK (close_cb), window);
   connect_clicked (builder, "add_text_button", G_CALLBACK (add_text_cb), window);
@@ -592,7 +577,7 @@ marker_sketcher_window_init (MarkerSketcherWindow *sketcher)
   sketcher->pos_x = 0;
   sketcher->pos_y = 0;
   sketcher->tool = PEN;
-  sketcher->size = P_SIZE_M;
+  sketcher->size = 6;
 
   sketcher->color.red = 0;
   sketcher->color.green = 0;

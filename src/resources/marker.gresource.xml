@@ -5,5 +5,8 @@
     <file preprocess="xml-stripblanks">ui/marker-prefs-dialog.ui</file>
     <file preprocess="xml-stripblanks">ui/marker-shortcuts-dialog.ui</file>
     <file preprocess="xml-stripblanks">ui/marker-sketcher-window.ui</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/marker-pen-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/marker-eraser-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/marker-text-symbolic.svg</file>
   </gresource>
 </gresources>

@@ -736,8 +736,9 @@ marker_window_init (MarkerWindow *window)
 {
   gtk_widget_init_template (GTK_WIDGET (window));
 
-  /* Add the marker icon theme (sketcher tool icons) to the default icon theme */
-  gtk_icon_theme_add_search_path (gtk_icon_theme_get_for_display (gdk_display_get_default ()), ICONS_DIR);
+  /* Bundled sketcher tool icons live in the resource bundle */
+  gtk_icon_theme_add_resource_path (gtk_icon_theme_get_for_display (gdk_display_get_default ()),
+                                    "/com/github/fabiocolacio/marker/icons");
 
   window->is_fullscreen = FALSE;
   window->sidebar_visible = FALSE;

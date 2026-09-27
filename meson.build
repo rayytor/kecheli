@@ -9,7 +9,6 @@ APP_ID = 'com.github.fabiocolacio.marker'
 PREFIX = get_option('prefix')
 DATA_DIR = join_paths(PREFIX, 'share')
 APP_DIR = join_paths(DATA_DIR, APP_ID)
-ICONS_DIR = join_paths(APP_DIR, 'icons')
 STYLES_DIR = join_paths(APP_DIR, 'styles')
 COMMON_DIR = join_paths(APP_DIR, 'common')
 SCRIPTS_DIR = join_paths(APP_DIR, 'scripts')
@@ -40,6 +39,7 @@ marker_sources = [
   'src/marker-source-view.c',
   'src/marker-preview.c',
   'src/marker-sketcher-window.c',
+  'src/marker-brush-scale.c',
   'src/marker-string.c',
   'src/marker-utils.c',
   res
@@ -82,7 +82,6 @@ deps = [
 add_project_arguments(
   '-DAPP_ID="@0@"'.format(APP_ID),
   '-DSTYLES_DIR="@0@/"'.format(STYLES_DIR),
-  '-DICONS_DIR="@0@/"'.format(ICONS_DIR),
   '-DSCRIPTS_DIR="@0@/"'.format(SCRIPTS_DIR),
   '-DHIGHLIGHT_STYLES_DIR="@0@/"'.format(HIGHLIGHT_STYLES_DIR),
   '-DMARKER_VERSION="@0@"'.format(meson.project_version()),
@@ -128,6 +127,5 @@ install_data(
 install_subdir('data/styles', install_dir : APP_DIR)
 install_subdir('data/common', install_dir : APP_DIR)
 install_subdir('data/scripts', install_dir : APP_DIR)
-install_subdir('data/icons', install_dir : APP_DIR)
 
 meson.add_install_script('post-install.sh')
